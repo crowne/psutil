@@ -119,6 +119,25 @@ function ktsh
     }
 }
 
+function ktop() {
+    Write-Host "> kubectl top nodes"
+    kubectl top nodes
+
+    $topnode = ( kubectl top nodes --no-headers | echo ) -replace '[ ]{2,}',',' |`
+                    ConvertFrom-Csv -Header 'NODENAME','CPU','CPU-pc','MEMORY','MEM-pc' |`
+                    Sort MEM-pc -Descending | Select-Object -First 1
+
+    Write-Host "`ntopnode = $($topnode.NODENAME) `n`tCPU = $($topnode.CPU) `n`tMEM = $($topnode.MEMORY) `n`tMEM-pc = $($topnode.'MEM-pc')"
+
+    (kubectl get pods --all-namespaces --output wide | Select-String "$($topnode.NODENAME)" ) -replace '[ ]{2,}',',' |`
+        ConvertFrom-Csv -Header 'NAMESPACE','NAME','READY','STATUS','RESTARTS','AGE','IP','NODE','NOMINATED NODE','READINESS GATES' |`
+        ForEach-Object {
+            $nm = $_.NAME
+            $ns = $_.NAMESPACE
+            ( kubectl top pods --namespace $ns $nm --containers --no-headers | echo ) -replace '(.*)(\d*)Mi','${1}${2}  Mi' -replace '[ ]{2,}',','
+        } | ConvertFrom-Csv -Header 'Podname','Container','CPU','Memory','MemUnit' | Sort { [int]$_.Memory } -Descending | Format-Table -AutoSize
+}
+
 function azacr()
 {
     Write-Host "> az acr login --name myorg.azurecr.io"
