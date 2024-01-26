@@ -27,19 +27,16 @@ New-Alias ktl kubectl
 If (Test-Path Alias:np) {Remove-Item Alias:np}
 New-Alias np C:\"Program Files"\Notepad++\notepad++.exe
 
-function printenv()
-{
+function printenv() {
     Write-Host "> dir Env:"
 	dir Env:
 }
 
-function tags()
-{
+function tags() {
     git tag -n5
 }
 
-function kctx()
-{
+function kctx() {
     param (
         [Parameter(Mandatory=$false)]
         [string] $ContextName
@@ -61,8 +58,7 @@ function kctx()
     }
 }
 
-function kctxu([string]$ContextName)
-{
+function kctxu([string]$ContextName) {
     Write-Host "> kubectl config use-context $ContextName"
 	kubectl config use-context $ContextName
 }
@@ -83,8 +79,7 @@ function ktns {
     
 }
 
-function ktsh
-{
+function ktsh {
     Param(
         [Parameter(Mandatory=$true)]
         [string] $PodName,
@@ -120,6 +115,11 @@ function ktsh
 }
 
 function ktop() {
+    param (
+        [Parameter(Mandatory=$false)]
+        [string] $NodeName
+    )
+
     Write-Host "> kubectl top nodes"
     kubectl top nodes
 
@@ -129,7 +129,18 @@ function ktop() {
 
     Write-Host "`ntopnode = $($topnode.NODENAME) `n`tCPU = $($topnode.CPU) `n`tMEM = $($topnode.MEMORY) `n`tMEM-pc = $($topnode.'MEM-pc')"
 
-    (kubectl get pods --all-namespaces --output wide | Select-String "$($topnode.NODENAME)" ) -replace '[ ]{2,}',',' |`
+    $node_name = $topnode.NODENAME
+    if ( $PSBoundParameters.ContainsKey('NodeName') ) {
+        if ( $NodeName -eq 'all' ) {
+            $node_name = ".*"
+        } else {
+            $node_name = $NodeName
+        }
+    }
+
+    Write-Host "`nSelected node : $($node_name)`n"
+    
+    (kubectl get pods --all-namespaces --output wide | Select-String "$node_name" | Select-String "running" ) -replace '[ ]{2,}',',' |`
         ConvertFrom-Csv -Header 'NAMESPACE','NAME','READY','STATUS','RESTARTS','AGE','IP','NODE','NOMINATED NODE','READINESS GATES' |`
         ForEach-Object {
             $nm = $_.NAME
@@ -138,26 +149,22 @@ function ktop() {
         } | ConvertFrom-Csv -Header 'Podname','Container','CPU','Memory','MemUnit' | Sort { [int]$_.Memory } -Descending | Format-Table -AutoSize
 }
 
-function azacr()
-{
+function azacr() {
     Write-Host "> az acr login --name myorg.azurecr.io"
 	az acr login --name myorg.azurecr.io
 }
 
-function busybox()
-{
+function busybox() {
     Write-Host "> docker run -it --rm busybox"
 	docker run -it --rm busybox
 }
 
-function pgrun()
-{
+function pgrun() {
     Write-Host "> docker run --name pg -e POSTGRES_PASSWORD=Password123 -d -p 5432:5432 postgres"
     docker run --name pg -e POSTGRES_PASSWORD=Password123 -d -p 5432:5432 postgres
 }
 
-function pgterm([string]$UserName)
-{
+function pgterm([string]$UserName) {
     Write-Host "> psql --host=localhost --port=32345 --username=$UserName"
     psql --host=localhost --port=32345 --username=$UserName
 }
