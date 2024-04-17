@@ -116,7 +116,7 @@ function ktsh {
 
 function kpod() {
     Write-Host "Once the shell starts install tools as follows:"
-    Write-Host "> apt-get update -y; apt-get install dnsutils -y; apt-get install curl -y; apt-get install netcat-traditional -y"
+    Write-Host "> apt-get update -y; apt-get install dnsutils curl telnet netcat-traditional net-tools -y;"
     kubectl run -it --rm aks-ssh --image=debian:stable
 }
 
