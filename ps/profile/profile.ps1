@@ -165,6 +165,16 @@ function busybox() {
 	docker run -it --rm busybox
 }
 
+function dosh() {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string] $ImageName
+    )
+
+    Write-Host "> docker run -it --rm --entrypoint /bin/sh $ImageName"
+    docker run -it --rm --entrypoint /bin/sh $ImageName
+}
+
 function pgrun() {
     Write-Host "> docker run --name pg -e POSTGRES_PASSWORD=Password123 -d -p 5432:5432 postgres"
     docker run --name pg -e POSTGRES_PASSWORD=Password123 -d -p 5432:5432 postgres
