@@ -199,3 +199,11 @@ function NoLock {
         $myshell.sendkeys("{NUMLOCK}")
     }
 }
+
+function showcert([string]$cert_file) {
+    $cert_text = Get-Content -Path $cert_file
+    $cert_bytes = [System.Text.Encoding]::UTF8.GetBytes($cert_text)
+    $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($cert_bytes)
+
+    Write-Host $cert
+}
