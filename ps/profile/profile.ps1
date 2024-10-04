@@ -200,9 +200,84 @@ function NoLock {
     }
 }
 
-function showcert([string]$cert_file) {
+function split-certChain([string]$cert_file) {
     $cert_text = Get-Content -Path $cert_file
-    $cert_bytes = [System.Text.Encoding]::UTF8.GetBytes($cert_text)
+    $certs_count = ([regex]::Matches($cert_text, "BEGIN CERTIFICATE" )).count
+
+    if ($certs_count -lt 1) {
+        return $null
+    }
+
+    # Inspired by https://www.powershellgallery.com/packages/Posh-ACME/1.1/Content/Private%5CSplit-CertChain.ps1
+
+    $CERT_BEGIN = '-----BEGIN CERTIFICATE-----*'
+    $CERT_END   = '-----END CERTIFICATE-----*'
+
+    $cert_collection = 0..$($certs_count - 1)
+    $cert_lines = @()
+
+    $part_count = 0
+
+    $startCert = $false
+    foreach ($line in $cert_text) {
+
+        # skip whitespace
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+
+        # find the first line of the cert
+        if (!$startCert) {
+            if ($line -like $CERT_BEGIN) {
+                Write-Debug "found cert start : $($part_count + 1)"
+                $startCert = $true
+                $cert_lines = @()
+                $cert_lines += $line
+            }
+            continue
+        }
+
+        # write the rest of the lines of the cert and watch for the end
+        if ($startCert) {
+            $cert_lines += $line
+            if ($line -like $CERT_END) {
+                Write-Debug "found cert end : $($part_count + 1)"
+                $startCert = $false
+                $copy_lines = $cert_lines.Clone()
+                # [array]::copy($cert_lines, $cert_collection[$part_count], $cert_lines.Length)
+                $cert_collection[$part_count] = $copy_lines
+                $part_count++
+            }
+            continue
+        }
+    }
+
+    return $cert_collection
+
+}
+
+function showcert([string]$cert_file, [int]$part_no=1) {
+    $cert_parts = split-certChain($cert_file)
+
+    if ($null -eq $cert_parts) {
+        Write-Host "Invalid cert file"
+        return
+    }
+
+    Write-Host " Cert Parts in file : $($cert_parts.Length)`n"
+
+    $index = 0
+    if ($null -ne $part_no) {
+        if ($part_no -gt $cert_parts.Length) {
+            Write-Host " requested part_no too high, displaying part 1`n"
+        } elseif ($part_no -lt 1) {
+            Write-Host " requested part_no too low, displaying part 1`n"
+        } else {
+            $index = $part_no - 1
+        }
+    }
+    
+    Write-Host " Showing Part : $($index + 1)`n"
+
+    $cert_bytes = [System.Text.Encoding]::UTF8.GetBytes($cert_parts[$index])
     $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($cert_bytes)
 
     Write-Host $cert
