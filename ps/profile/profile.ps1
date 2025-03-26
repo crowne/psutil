@@ -1,26 +1,3 @@
-# Dracula readline configuration. Requires version 2.0, if you have 1.2 convert to `Set-PSReadlineOption -TokenType`
-Set-PSReadlineOption -Color @{
-    "Command" = [ConsoleColor]::Green
-    "Parameter" = [ConsoleColor]::Gray
-    "Operator" = [ConsoleColor]::Magenta
-    "Variable" = [ConsoleColor]::White
-    "String" = [ConsoleColor]::Yellow
-    "Number" = [ConsoleColor]::Blue
-    "Type" = [ConsoleColor]::Cyan
-    "Comment" = [ConsoleColor]::DarkCyan
-}
-# Dracula Prompt Configuration
-Import-Module posh-git
-$GitPromptSettings.DefaultPromptPrefix.Text = "$([char]0x2192) " # arrow unicode symbol
-$GitPromptSettings.DefaultPromptPrefix.ForegroundColor = [ConsoleColor]::Green
-$GitPromptSettings.DefaultPromptPath.ForegroundColor =[ConsoleColor]::Cyan
-$GitPromptSettings.DefaultPromptSuffix.Text = "$([char]0x203A) " # chevron unicode symbol
-$GitPromptSettings.DefaultPromptSuffix.ForegroundColor = [ConsoleColor]::Magenta
-# Dracula Git Status Configuration
-$GitPromptSettings.BeforeStatus.ForegroundColor = [ConsoleColor]::Blue
-$GitPromptSettings.BranchColor.ForegroundColor = [ConsoleColor]::Blue
-$GitPromptSettings.AfterStatus.ForegroundColor = [ConsoleColor]::Blue
-
 If (Test-Path Alias:ktl) {Remove-Item Alias:ktl}
 New-Alias ktl kubectl
 
@@ -29,13 +6,80 @@ New-Alias np C:\"Program Files"\Notepad++\notepad++.exe
 
 function printenv() {
     Write-Host "> dir Env:"
-	dir Env:
+    dir Env:
 }
 
-function tags() {
+function azacr() {
+    Write-Host "> az acr login --name myorg.azurecr.io"
+    az acr login --name myorg.azurecr.io
+}
+
+function NoLock {
+    param (
+        $minutes = 60 #//Duration. Until 60 mins below script will run
+    )
+
+    #The below script will trigger dot key every 60 secs
+
+    $myshell = New-Object -com "Wscript.Shell"
+
+    for ($i = 0; $i -lt $minutes; $i++) {
+        Start-Sleep -Seconds 60 #//every 60 secs dot key press
+        $myshell.sendkeys("{NUMLOCK}")
+    }
+}
+
+# Docker helpers
+function alpine() {
+    Write-Host "> docker run -it --rm alpine"
+    Write-Host "> curl can be installed with: apk --update add curl"
+    docker run -it --rm alpine
+}
+
+function busybox() {
+    Write-Host "> docker run -it --rm busybox"
+    docker run -it --rm busybox
+}
+
+function dosh() {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string] $ImageName
+    )
+
+    Write-Host "> docker run -it --rm --entrypoint /bin/sh $ImageName"
+    docker run -it --rm --entrypoint /bin/sh $ImageName
+}
+
+function dcom() {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string] $Action,
+        [Parameter(ValueFromRemainingArguments=$true)]
+        [string[]] $AdditionalArgs
+    )
+
+    $allArgs = @($Action) + $AdditionalArgs
+    Write-Host "> docker compose $($allArgs -join ' ')"
+    docker compose @allArgs
+}
+
+function pgrun() {
+    Write-Host "> docker run --name pg -e POSTGRES_PASSWORD=Password123 -d -p 5432:5432 postgres"
+    docker run --name pg -e POSTGRES_PASSWORD=Password123 -d -p 5432:5432 postgres
+}
+
+function pgterm([string]$UserName) {
+    Write-Host "> psql --host=localhost --port=32345 --username=$UserName"
+    psql --host=localhost --port=32345 --username=$UserName
+}
+
+# Git Helpers
+function gtags() {
     git tag -n5
 }
 
+# Kubernetes helpers
 function kctx() {
     param (
         [Parameter(Mandatory=$false)]
@@ -56,11 +100,6 @@ function kctx() {
         Write-Host "> kubectl config get-contexts"
         kubectl config get-contexts
     }
-}
-
-function kctxu([string]$ContextName) {
-    Write-Host "> kubectl config use-context $ContextName"
-	kubectl config use-context $ContextName
 }
 
 function ktns {
@@ -155,51 +194,7 @@ function ktop() {
         } | ConvertFrom-Csv -Header 'Podname','Container','CPU','Memory','MemUnit' | Sort { [int]$_.Memory } -Descending | Format-Table -AutoSize
 }
 
-function azacr() {
-    Write-Host "> az acr login --name myorg.azurecr.io"
-	az acr login --name myorg.azurecr.io
-}
-
-function busybox() {
-    Write-Host "> docker run -it --rm busybox"
-	docker run -it --rm busybox
-}
-
-function dosh() {
-    param (
-        [Parameter(Mandatory=$true)]
-        [string] $ImageName
-    )
-
-    Write-Host "> docker run -it --rm --entrypoint /bin/sh $ImageName"
-    docker run -it --rm --entrypoint /bin/sh $ImageName
-}
-
-function pgrun() {
-    Write-Host "> docker run --name pg -e POSTGRES_PASSWORD=Password123 -d -p 5432:5432 postgres"
-    docker run --name pg -e POSTGRES_PASSWORD=Password123 -d -p 5432:5432 postgres
-}
-
-function pgterm([string]$UserName) {
-    Write-Host "> psql --host=localhost --port=32345 --username=$UserName"
-    psql --host=localhost --port=32345 --username=$UserName
-}
-
-function NoLock {
-    param (
-        $minutes = 60 #//Duration. Until 60 mins below script will run
-    )
-
-    #The below script will trigger dot key every 60 secs
-
-    $myshell = New-Object -com "Wscript.Shell"
-
-    for ($i = 0; $i -lt $minutes; $i++) {
-        Start-Sleep -Seconds 60 #//every 60 secs dot key press
-        $myshell.sendkeys("{NUMLOCK}")
-    }
-}
-
+# certificate helpers
 function split-certChain([string]$cert_file) {
     $cert_text = Get-Content -Path $cert_file
     $certs_count = ([regex]::Matches($cert_text, "BEGIN CERTIFICATE" )).count
@@ -281,4 +276,33 @@ function showcert([string]$cert_file, [int]$part_no=1) {
     $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($cert_bytes)
 
     Write-Host $cert
+}
+
+# omp Helpers
+function ompTheme([string]$ThemeName) {
+    if ( Is-Command("oh-my-posh.exe") )
+    {
+        $ThemePath = "$env:POSH_THEMES_PATH/$ThemeName.omp.json"
+        if ( Test-Path $ThemePath -PathType Leaf )
+        {
+            Write-Host "> omp setting theme $ThemeName"
+            oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH/$ThemeName.omp.json" | Invoke-Expression    
+        } else {
+            Write-Host "> oh-my-posh theme not found"
+        }
+    } else {
+        Write-Host "> oh-my-posh not installed :("
+    }
+    
+}
+
+if ( Is-Command("oh-my-posh.exe") )
+{ 
+    Write-Output "Configuring oh-my-posh..."
+    oh-my-posh init pwsh | Invoke-Expression
+
+    if ( $env:OMP_THEME )
+    {
+        ompTheme($env:OMP_THEME)
+    }
 }

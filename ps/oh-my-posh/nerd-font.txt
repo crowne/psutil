@@ -1,0 +1,16 @@
+https://ohmyposh.dev/docs/installation/fonts
+
+Windows Terminal setttings.json
+
+{
+    ...
+    "profiles": 
+    {
+        "defaults": {
+            "font":
+            {
+                "face": "FantasqueSansM Nerd Font"
+            }
+        }
+    }
+}
