@@ -299,10 +299,12 @@ function ompTheme([string]$ThemeName) {
 if ( Is-Command("oh-my-posh.exe") )
 { 
     Write-Output "Configuring oh-my-posh..."
+    [Console]::OutputEncoding = [Text.Encoding]::UTF8
     oh-my-posh init pwsh | Invoke-Expression
 
-    if ( $env:OMP_THEME )
-    {
+    if ( $env:OMP_THEME ) {
         ompTheme($env:OMP_THEME)
+    } else {
+        Write-Host "> No theme set using default, try set env OMP_THEME=git-on-up"
     }
 }
