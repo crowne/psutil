@@ -38,6 +38,7 @@
         "type": "prompt"
       }
     ],
+    "console_title_template": "{{.Folder}}{{if .Root}} :: root{{end}}",
     "version": 3
   }
   
