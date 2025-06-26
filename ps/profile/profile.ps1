@@ -296,6 +296,18 @@ function ompTheme([string]$ThemeName) {
     
 }
 
+# vscode devcontainer helpers
+function hexify([string]$Text) {
+    # from https://github.com/microsoft/vscode-remote-release/issues/2133#issuecomment-737200076
+    $t = $Text.ToCharArray() | %{$h=''}{$h += ('{0:x}' -f [int]$_)}{$h}
+    return $t
+}
+
+function devcon() {
+    $hexpath = hexify($pwd)
+    code --folder-uri "vscode-remote://dev-container+$hexpath/workspace"
+}
+
 if ( Is-Command("oh-my-posh.exe") )
 { 
     Write-Output "Configuring oh-my-posh..."
