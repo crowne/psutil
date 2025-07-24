@@ -200,6 +200,7 @@ function split-certChain([string]$cert_file) {
     $certs_count = ([regex]::Matches($cert_text, "BEGIN CERTIFICATE" )).count
 
     if ($certs_count -lt 1) {
+        Write-Error "No certificates found in file $cert_file"
         return $null
     }
 
@@ -208,7 +209,7 @@ function split-certChain([string]$cert_file) {
     $CERT_BEGIN = '-----BEGIN CERTIFICATE-----*'
     $CERT_END   = '-----END CERTIFICATE-----*'
 
-    $cert_collection = 0..$($certs_count - 1)
+    $cert_collection = @()
     $cert_lines = @()
 
     $part_count = 0
@@ -236,20 +237,21 @@ function split-certChain([string]$cert_file) {
             if ($line -like $CERT_END) {
                 Write-Debug "found cert end : $($part_count + 1)"
                 $startCert = $false
-                $copy_lines = $cert_lines.Clone()
-                # [array]::copy($cert_lines, $cert_collection[$part_count], $cert_lines.Length)
-                $cert_collection[$part_count] = $copy_lines
+                $cert_part = $cert_lines -join "`n"
+                $cert_collection += $cert_part
                 $part_count++
             }
             continue
         }
     }
 
-    return $cert_collection
-
+    return ,$cert_collection
 }
 
 function showcert([string]$cert_file, [int]$part_no=1) {
+    $DebugPreference = 'SilentlyContinue'
+    # $DebugPreference = 'Continue'
+
     $cert_parts = split-certChain($cert_file)
 
     if ($null -eq $cert_parts) {
@@ -273,9 +275,11 @@ function showcert([string]$cert_file, [int]$part_no=1) {
     Write-Host " Showing Part : $($index + 1)`n"
 
     $cert_bytes = [System.Text.Encoding]::UTF8.GetBytes($cert_parts[$index])
+    Write-Debug "cert_bytes = $cert_bytes"
     $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($cert_bytes)
 
-    Write-Host $cert
+    # Write-Host $cert
+    $cert | Select-Object Subject, Issuer, SerialNumber, NotBefore, NotAfter, Thumbprint
 }
 
 # omp Helpers
