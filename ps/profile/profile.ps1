@@ -4,6 +4,14 @@ New-Alias ktl kubectl
 If (Test-Path Alias:np) {Remove-Item Alias:np}
 New-Alias np C:\"Program Files"\Notepad++\notepad++.exe
 
+function Is-Command([string]$Command) {
+    if (Get-Command $Command -ErrorAction SilentlyContinue)
+    {
+        return $true
+    }
+    return $false
+}
+
 function printenv() {
     Write-Host "> dir Env:"
     dir Env:
