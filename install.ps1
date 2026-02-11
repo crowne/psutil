@@ -11,6 +11,12 @@ Copy-Item .\ps\profile\profile.ps1 "${profileDir}\Microsoft.VSCode_profile.ps1"
 
 if ( $Env:POSH_THEMES_PATH -and ( Test-Path $Env:POSH_THEMES_PATH -PathType Container ) ) {
     Copy-Item -Force ./ps/oh-my-posh/git-on-up.omp.json $Env:POSH_THEMES_PATH
+} else {
+    # mkdir if not exist $Env:LOCALAPPDATA/omp-theme
+    if ( -not (Test-Path $Env:LOCALAPPDATA/omp-theme -PathType Container) ) {
+        New-Item -ItemType Directory -Path $Env:LOCALAPPDATA/omp-theme
+    }
+    Copy-Item -Force ./ps/oh-my-posh/git-on-up.omp.json $Env:LOCALAPPDATA/omp-theme
 }
 
 Write-Output "Now please run :>. `$profile"

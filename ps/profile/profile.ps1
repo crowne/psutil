@@ -294,11 +294,12 @@ function showcert([string]$cert_file, [int]$part_no=1) {
 function ompTheme([string]$ThemeName) {
     if ( Is-Command("oh-my-posh.exe") )
     {
-        $ThemePath = "$env:POSH_THEMES_PATH/$ThemeName.omp.json"
+        $ThemeBase = $Env:POSH_THEMES_PATH ? $Env:POSH_THEMES_PATH : $Env:LOCALAPPDATA + "\omp-theme"
+        $ThemePath = "$ThemeBase/$ThemeName.omp.json"
         if ( Test-Path $ThemePath -PathType Leaf )
         {
             Write-Host "> omp setting theme $ThemeName"
-            oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH/$ThemeName.omp.json" | Invoke-Expression    
+            oh-my-posh init pwsh --config "$ThemePath" | Invoke-Expression
         } else {
             Write-Host "> oh-my-posh theme not found"
         }
