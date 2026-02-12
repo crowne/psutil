@@ -1,9 +1,3 @@
-If (Test-Path Alias:ktl) {Remove-Item Alias:ktl}
-New-Alias ktl kubectl
-
-If (Test-Path Alias:np) {Remove-Item Alias:np}
-New-Alias np C:\"Program Files"\Notepad++\notepad++.exe
-
 function Is-Command([string]$Command) {
     if (Get-Command $Command -ErrorAction SilentlyContinue)
     {
@@ -11,6 +5,27 @@ function Is-Command([string]$Command) {
     }
     return $false
 }
+
+
+If (Test-Path Alias:ktl) {Remove-Item Alias:ktl}
+New-Alias ktl kubectl
+
+If (Test-Path Alias:np) {Remove-Item Alias:np}
+New-Alias np C:\"Program Files"\Notepad++\notepad++.exe
+
+If (Test-Path Alias:docker) {Remove-Item Alias:docker}
+If ( $Env:USE_PODMAN_FOR_DOCKER -eq "TRUE" )
+{
+    if (Is-Command("podman.exe"))
+    {
+        New-Alias docker podman
+    } else {
+        Write-Host "USE_PODMAN_FOR_DOCKER is set to TRUE but podman is not installed, podman will be used when you run 'docker' command"
+    }
+} else {
+    Write-Host "USE_PODMAN_FOR_DOCKER is not set to TRUE : '$Env:USE_PODMAN_FOR_DOCKER'"
+}
+
 
 function printenv() {
     Write-Host "> dir Env:"
