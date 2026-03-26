@@ -1,3 +1,5 @@
+Set-PSReadLineKeyHandler -Chord Ctrl+Shift+RightArrow -Function AcceptNextSuggestionWord
+
 function Is-Command([string]$Command) {
     if (Get-Command $Command -ErrorAction SilentlyContinue)
     {
