@@ -104,6 +104,114 @@ function gtags() {
     git tag -n5
 }
 
+function gstats() {
+    # Display git statistics for the current repository since the start of the current year
+    param (
+        [Parameter(Mandatory=$false)]
+        [string] $startDateParam
+    )
+
+
+    $repoPath = Get-Location
+    if ( -not $startDateParam ) {
+        $year = Get-Date -Format "yyyy"
+        $startDate = "$year-01-01"
+    } else {
+        $startDate = $startDateParam
+    }
+    Write-host "Getting git stats since $startDate for repo $repoPath"
+
+    $committers = git log --since="$startDate" --pretty="%an" | Sort-Object | Get-Unique
+
+    # Display the committers
+    Write-Output "`nCommitters since ${startDate}:"
+    $committers
+
+    # Display the total count
+    Write-Output "`nTotal committers: $($committers.Count)"
+
+    # Display the Pull Requests merged
+    Write-Output "`nPull Requests merged since ${startDate}:"
+    git log --since="$startDate" --pretty="%s" |
+        Select-String "^Merged PR" |
+        Measure-Object |
+        Select-Object -ExpandProperty Count
+
+    # Display the lines of code added/removed
+    Write-Output "`nLines of code added/removed since ${startDate}:"
+    $stats = git log --since="$startDate" --pretty=tformat: --numstat |
+        ForEach-Object {
+            if ($_ -match "^\d+\s+\d+") {
+                $parts = $_ -split "\s+"
+                [int]$added += $parts[0]
+                [int]$removed += $parts[1]
+            }
+        }
+    "Added: $added"
+    "Removed: $removed"
+}
+
+<#
+ .SYNOPSIS
+  Clean up local and remote git branches that have not had commits in a while,
+  excluding protected branches and those currently checked out in any worktree.
+  By default, it will show what would be deleted for branches with no commits in the last 6 months,
+  but you can disable dry run mode to actually perform the deletions.
+  Usage: gclean -DryRun $true -MonthsAgo 6 -ProtectedBranches "main,master"
+#>
+function gclean {
+    param(
+        [bool]$DryRun = $true,
+        [int]$MonthsAgo = 6,
+        [string]$ProtectedBranches = "main,master"
+    )
+
+    $cutoffDate = (Get-Date).AddMonths(-$MonthsAgo)
+    $dryRunLabel = if ($DryRun) { "enabled" } else { "disabled" }
+    $protectedList = $ProtectedBranches -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
+    $protectedPattern = ($protectedList | ForEach-Object { [regex]::Escape($_) }) -join '|'
+
+    Write-Host "Running gclean with:"
+    Write-Host "  MonthsAgo  : $MonthsAgo"
+    Write-Host "  CutoffDate : $($cutoffDate.ToString('yyyy-MM-dd'))"
+    Write-Host "  Protected  : $($protectedList -join ', ')"
+    Write-Host "  DryRun     : $dryRunLabel"
+    Write-Host ""
+
+    # List all branches (local + remote), excluding:
+    #   * current branch, + worktree-checked-out branches,
+    #   symbolic refs (HEAD ->), and protected branch names
+    $branches = git branch -a |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { $_ -notmatch '^\*' } |
+        Where-Object { $_ -notmatch '^\+' } |
+        Where-Object { $_ -notmatch 'HEAD\s*->' } |
+        ForEach-Object { $_ -replace '^remotes/', '' } |
+        Where-Object { $_ -notmatch "(^|/)($protectedPattern)$" }
+
+    foreach ($branch in $branches) {
+        $lastCommitDateStr = git log -1 --format=%cI $branch 2>$null
+        if (-not $lastCommitDateStr) {
+            Write-Host "Skipping $branch (unable to read commit date)"
+            continue
+        }
+
+        $lastCommitDate = [datetime]::Parse($lastCommitDateStr)
+        if ($lastCommitDate -lt $cutoffDate) {
+            $localBranchName = $branch -replace '^origin/', ''
+
+            if ($DryRun) {
+                Write-Host "[DRY RUN] git branch -d $localBranchName  (last commit: $($lastCommitDate.ToString('yyyy-MM-dd')))"
+                Write-Host "[DRY RUN] git push origin --delete $localBranchName"
+            } else {
+                git branch -d $localBranchName
+                git push origin --delete $localBranchName
+            }
+        }
+    }
+}
+
+
 # Kubernetes helpers
 function kctx() {
     param (
