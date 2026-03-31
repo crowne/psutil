@@ -201,10 +201,10 @@ function gclean {
             $localBranchName = $branch -replace '^origin/', ''
 
             if ($DryRun) {
-                Write-Host "[DRY RUN] git branch -d $localBranchName  (last commit: $($lastCommitDate.ToString('yyyy-MM-dd')))"
+                Write-Host "[DRY RUN] git branch -D $localBranchName  (last commit: $($lastCommitDate.ToString('yyyy-MM-dd')))"
                 Write-Host "[DRY RUN] git push origin --delete $localBranchName"
             } else {
-                git branch -d $localBranchName
+                git branch -D $localBranchName
                 git push origin --delete $localBranchName
             }
         }
