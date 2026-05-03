@@ -12,9 +12,6 @@ function Is-Command([string]$Command) {
 If (Test-Path Alias:ktl) {Remove-Item Alias:ktl}
 New-Alias ktl kubectl
 
-If (Test-Path Alias:np) {Remove-Item Alias:np}
-New-Alias np C:\"Program Files"\Notepad++\notepad++.exe
-
 If (Test-Path Alias:docker) {Remove-Item Alias:docker}
 If ( $Env:USE_PODMAN_FOR_DOCKER -eq "TRUE" )
 {
@@ -28,6 +25,25 @@ If ( $Env:USE_PODMAN_FOR_DOCKER -eq "TRUE" )
     Write-Host "USE_PODMAN_FOR_DOCKER is not set to TRUE : '$Env:USE_PODMAN_FOR_DOCKER'"
 }
 
+If (Test-Path Alias:np) {Remove-Item Alias:np}
+function np([string]$target) {
+    # if target == host then start process notepad -Verb runas notepad.exe C:/Windows/System32/drivers/etc/hosts
+    if ($target -eq "hosts") {
+        $hostsPath = "C:/Windows/System32/drivers/etc/hosts"
+        Write-Host "> Starting notepad as admin to edit hosts file at $hostsPath"
+        Start-Process -FilePath "notepad.exe" -ArgumentList $hostsPath -Verb runas
+    } elseif ($target -eq "myhosts") {
+        $knownHostsPath = "$env:USERPROFILE/.ssh/known_hosts"
+        Write-Host "> Edit known_hosts file at $knownHostsPath"
+        Start-Process -FilePath "notepad.exe" -ArgumentList $knownHostsPath
+    } elseif (Is-Command("notepad++.exe")) {
+        Write-Host "> Starting notepad++"
+        Start-Process -FilePath "notepad++.exe" -ArgumentList $target
+    } else {
+        Write-Host "> Starting notepad"
+        Start-Process -FilePath "notepad.exe" -ArgumentList $target
+    }
+}
 
 function printenv() {
     Write-Host "> dir Env:"
