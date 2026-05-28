@@ -120,6 +120,14 @@ function gtags() {
     git tag -n5
 }
 
+function gloc() {
+    $files = git ls-files
+    $stats = $files | Group-Object { $_.Split('.')[-1] } | Select-Object Name, @{Name="LinesOfCode"; Expression={($_.Group | ForEach-Object { Get-Content $_ | Measure-Object -Line } | Measure-Object -Property Lines -Sum).Sum}}
+    $stats | Format-Table -AutoSize
+    $totalLOC = ($stats | Measure-Object -Property LinesOfCode -Sum).Sum
+    Write-Host "Total Lines of Code: $totalLOC"
+}
+
 function gstats() {
     # Display git statistics for the current repository since the start of the current year
     param (
